@@ -16,7 +16,7 @@ int main(int argc, const char** argv) {
   //*************************************************************
   std::cout << "------------------------------" << std::endl;
   if (!ArgParser::parse(argc, argv)) {
-    std::cout << "Command line arguments are not valid. Terminating.";
+    std::cout << "Command line arguments are not valid. Terminating." << std::endl;
     return -1;
   }
 
