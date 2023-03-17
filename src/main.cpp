@@ -3,15 +3,17 @@
 #include <vector>
 
 #include "ArgParser.hpp"
-#include "FilesystemScanner.hpp"
 #include "FileProcessor.hpp"
+#include "FilesystemScanner.hpp"
 
 static const sview_vector HEADER_EXTENSIONS{".h", ".hpp"};
 static const sview_vector SOURCE_EXTENSIONS{".c", ".cpp"};
 
 svector&& makeScan(FilesystemScanner& fscan, svector const& dirs,
-                   sview_vector const& extensions, bool const makeRelative = true) {
-  for (auto const& dir : dirs) fscan.scanForFiles(dir, extensions, makeRelative);
+                   sview_vector const& extensions,
+                   bool const makeRelative = true) {
+  for (auto const& dir : dirs)
+    fscan.scanForFiles(dir, extensions, makeRelative);
   fscan.waitUntilResults();
   return std::move(fscan.takeFiles());
 }
@@ -21,6 +23,7 @@ int main(int argc, const char** argv) {
 
   // Get input
   //*************************************************************
+  std::cout << "------------------------------" << std::endl;
   if (!ArgParser::parse(argc, argv)) {
     std::cout << "Command line arguments are not valid. Terminating.";
     return -1;
@@ -33,12 +36,14 @@ int main(int argc, const char** argv) {
 
   // Scan filesystem
   //*************************************************************
-  std::cout << "Start scanning directories" << std::endl;
+  std::cout << "------------------------------" << std::endl;
+  std::cout << "Starting scanning directories" << std::endl;
 
   FilesystemScanner fscan;  // some ugly copypasta below
 
   // scan for sources in source directories
-  svector sources{makeScan(fscan, ArgParser::sourceDirs, SOURCE_EXTENSIONS, false)};
+  svector sources{
+      makeScan(fscan, ArgParser::sourceDirs, SOURCE_EXTENSIONS, false)};
   std::cout << "Found " << std::to_string(sources.size()) << " source files"
             << std::endl;
 
@@ -55,13 +60,26 @@ int main(int argc, const char** argv) {
 
   // Read files and parse
   //*************************************************************
-  std::cout << "Start sources preprocessing" << std::endl;
+  std::cout << "------------------------------" << std::endl;
+  std::cout << "Starting sources preprocessing" << std::endl;
 
   if (!sources.empty()) {
     FileProcessor fp;
-    for (auto& f: sources)
+    for (auto& f : sources) {
+      std::cout << "------------------------------" << std::endl;
       fp.processFile(f, ArgParser::includeDirs);
+    }
+
+    fmap results{fp.takeResults()};
+
+    std::cout << "------------------------------" << std::endl;
+    std::cout << "Total:" << std::endl;
+    for (auto const& p : results) {
+      std::cout << p.first << ": " << std::to_string(p.second) << std::endl;
+    }
   }
+  std::cout << "------------------------------" << std::endl;
+  std::cout << "Program finished! Have a nice day!";
 
   return 0;
 }
