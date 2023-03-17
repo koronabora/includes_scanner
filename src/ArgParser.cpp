@@ -16,7 +16,7 @@ bool ArgParser::parse(int argc, const char** argv) {
         "input", po::value<std::vector<std::string>>(), "Input dirs")(
         "include,I", po::value<std::vector<std::string>>(), "Includes");
 
-    // make input as parameter
+    // make <input> as parameter
     po::positional_options_description p;
     p.add("input", -1);
 

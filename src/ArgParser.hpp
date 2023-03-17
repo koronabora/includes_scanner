@@ -1,7 +1,7 @@
 #ifndef ARGPARSER_HPP
 #define ARGPARSER_HPP
 
-#include <string>
+#include <string_view>
 #include <vector>
 
 struct ArgParser {
@@ -10,4 +10,4 @@ struct ArgParser {
   static std::vector<std::string> includeDirs;
 };
 
-#endif
+#endif  // ARGPARSER_HPP

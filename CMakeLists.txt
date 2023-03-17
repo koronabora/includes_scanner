@@ -23,6 +23,6 @@ if (WIN32)
     set_target_properties(includes_scanner PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:includes_scanner>")
     #add_custom_command(TARGET includes_scanner POST_BUILD
     #  COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_RUNTIME_DLLS:includes_scanner>" "$<TARGET_FILE_DIR:includes_scanner>"
-    #  COMMENT "Daploying libraris"
+    #  COMMENT "Deploying libraris"
     #)
 endif()
