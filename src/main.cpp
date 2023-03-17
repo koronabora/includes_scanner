@@ -9,15 +9,6 @@
 static const sview_vector HEADER_EXTENSIONS{".h", ".hpp"};
 static const sview_vector SOURCE_EXTENSIONS{".c", ".cpp"};
 
-svector&& makeScan(FilesystemScanner& fscan, svector const& dirs,
-                   sview_vector const& extensions,
-                   bool const makeRelative = true) {
-  for (auto const& dir : dirs)
-    fscan.scanForFiles(dir, extensions, makeRelative);
-  fscan.waitUntilResults();
-  return std::move(fscan.takeFiles());
-}
-
 int main(int argc, const char** argv) {
   std::cout << "Welcome to includes scanner!" << std::endl;
 
@@ -39,42 +30,46 @@ int main(int argc, const char** argv) {
   std::cout << "------------------------------" << std::endl;
   std::cout << "Starting scanning directories" << std::endl;
 
-  FilesystemScanner fscan;  // some ugly copypasta below
-
+  FilesystemScanner fscan;
   // scan for sources in source directories
-  svector sources{
-      makeScan(fscan, ArgParser::sourceDirs, SOURCE_EXTENSIONS, false)};
+  for (auto const& dir : ArgParser::sourceDirs)
+    fscan.scanForFiles(dir, SOURCE_EXTENSIONS, false);
+  fscan.waitUntilResults();
+  svector sources{fscan.takeFiles()};
   std::cout << "Found " << std::to_string(sources.size()) << " source files"
-            << std::endl;
-
-  // scan for headers in source directories
-  svector localHeaders{
-      makeScan(fscan, ArgParser::sourceDirs, HEADER_EXTENSIONS)};
-  std::cout << "Found " << std::to_string(localHeaders.size())
-            << " local header files" << std::endl;
-
-  // scan for headers in include directories
-  svector headers{makeScan(fscan, ArgParser::includeDirs, HEADER_EXTENSIONS)};
-  std::cout << "Found " << std::to_string(headers.size()) << " header files"
             << std::endl;
 
   // Read files and parse
   //*************************************************************
-  std::cout << "------------------------------" << std::endl;
-  std::cout << "Starting sources preprocessing" << std::endl;
-
+  
   if (!sources.empty()) {
+    std::cout << "------------------------------" << std::endl;
+    std::cout << "Processing source files" << std::endl;
     FileProcessor fp;
-    for (auto& f : sources) {
-      std::cout << "------------------------------" << std::endl;
-      fp.processFile(f, ArgParser::includeDirs);
-    }
+    for (auto& f : sources) fp.processFile(f, ArgParser::includeDirs);
 
-    fmap results{fp.takeResults()};
+    fp.waitUntilResults();
+
+    auto results{fp.takeResults()};
+    fmap stats;
+
+    std::cout << "Finished" << std::endl;
+
+    for (auto const& p : results) {
+      std::cout << "------------------------------" << std::endl;
+      std::cout << p.fileName << std::endl;
+      for (auto const& vals : p.includes) {
+          // print to console
+        for (std::size_t i = 0; i < vals.second; ++i) std::cout << ". ";
+        std::cout << vals.first << std::endl;
+        // save to stats
+        ++stats[vals.first];
+      }
+    }
 
     std::cout << "------------------------------" << std::endl;
     std::cout << "Total:" << std::endl;
-    for (auto const& p : results) {
+    for (auto const& p : stats) {
       std::cout << p.first << ": " << std::to_string(p.second) << std::endl;
     }
   }
