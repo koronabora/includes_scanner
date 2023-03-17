@@ -74,7 +74,7 @@ int main(int argc, const char** argv) {
     }
   }
   std::cout << "------------------------------" << std::endl;
-  std::cout << "Program finished! Have a nice day!";
+  std::cout << "Program finished! Have a nice day!" << std::endl;
 
   return 0;
 }
