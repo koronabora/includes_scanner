@@ -28,8 +28,13 @@ bool ArgParser::parse(int argc, const char** argv) {
 
     sourceDirs = vm["input"].as<std::vector<std::string>>();
     includeDirs = vm["include"].as<std::vector<std::string>>();
-  } catch (const po::error& ex) {
+  } catch (po::error const& ex) {
     std::cerr << ex.what() << std::endl;
+    return false;
+  } catch (std::exception const& e) {
+    std::cerr << e.what() << std::endl;
+    return false;
+  } catch (...) {
     return false;
   }
   return true;

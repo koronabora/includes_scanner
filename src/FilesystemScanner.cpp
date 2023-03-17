@@ -6,8 +6,9 @@
 
 namespace fs = std::filesystem;
 
-std::vector<std::string> FilesystemScanner::_scan(
-    std::string_view path, std::vector<std::string_view> const& targetExts) {
+svector FilesystemScanner::_scan(std::string_view path,
+                                 sview_vector const& targetExts,
+                                 bool const makeRelative) {
   fs::path const rootPath{path};
   fs::recursive_directory_iterator begin(rootPath);
   fs::recursive_directory_iterator end;
@@ -20,55 +21,41 @@ std::vector<std::string> FilesystemScanner::_scan(
                                    p.extension()) != targetExts.end());
                });
 
-  std::vector<std::string> out;
+  svector out;
   std::transform(files.cbegin(), files.cend(), std::back_inserter(out),
-                 [&rootPath](fs::path const& p) {
-                   return fs::relative(p, rootPath).string();
+                 [&rootPath, &makeRelative](fs::path const& p) {
+                   return makeRelative ? fs::relative(p, rootPath).string() : p.string();
                  });
   return out;
 }
 
-void FilesystemScanner::scanForHeaders(std::string_view path) {
-  std::cout << "Scanning folder [" << path << "] for the header files"
-            << std::endl;
-  auto futureHandler = std::async(std::launch::async, &FilesystemScanner::_scan,
-                                  this, path, std::ref(HEADER_EXTENSIONS));
+void FilesystemScanner::scanForFiles(std::string_view path,
+                                     sview_vector const& extensions,
+                                     bool const makeRelative) {
+  try {
+    auto futureHandler =
+        std::async(std::launch::async, &FilesystemScanner::_scan, this, path,
+                   std::ref(extensions), makeRelative);
 
-  m_headerResultHandlers.push_back(std::move(futureHandler));
-}
-
-void FilesystemScanner::scanForSources(std::string_view path) {
-  std::cout << "Scanning folder [" << path << "] for the source files"
-            << std::endl;
-  auto futureHandler = std::async(std::launch::async, &FilesystemScanner::_scan,
-                                  this, path, std::ref(SOURCE_EXTENSIONS));
-  m_sourceResultHandlers.push_back(std::move(futureHandler));
+    m_resultHandlers.push_back(std::move(futureHandler));
+  } catch (std::exception const& e) {
+    std::cerr << e.what() << std::endl;
+  } catch (...) {
+  }
 }
 
 void FilesystemScanner::waitUntilResults() {
-  for (auto& f : m_headerResultHandlers) {
-    auto results = f.get();
-    m_headerFiles.insert(m_headerFiles.end(),
-                         std::make_move_iterator(results.begin()),
-                         std::make_move_iterator(results.end()));
+  try {
+    for (auto& f : m_resultHandlers) {
+      auto results = f.get();
+      m_files.insert(m_files.end(), std::make_move_iterator(results.begin()),
+                     std::make_move_iterator(results.end()));
+    }
+    m_resultHandlers.clear();
+  } catch (std::exception const& e) {
+    std::cerr << e.what() << std::endl;
+  } catch (...) {
   }
-  m_headerResultHandlers.clear();
-  for (auto& f : m_sourceResultHandlers) {
-    auto results = f.get();
-    m_sourceFiles.insert(m_sourceFiles.end(),
-                         std::make_move_iterator(results.begin()),
-                         std::make_move_iterator(results.end()));
-  }
-  m_sourceResultHandlers.clear();
-  std::cout << "Scan complete. Found "
-            << std::to_string(m_headerFiles.size()) << " header files and " << std::to_string(m_sourceFiles.size()) 
-            << " source files"
-            << std::endl;
 }
 
-std::vector<std::string>&& FilesystemScanner::takeSourceFiles() {
-  return std::move(m_sourceFiles);
-}
-std::vector<std::string>&& FilesystemScanner::takeHeaderFiles() {
-  return std::move(m_headerFiles);
-}
+svector&& FilesystemScanner::takeFiles() { return std::move(m_files); }

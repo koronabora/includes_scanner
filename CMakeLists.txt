@@ -5,7 +5,7 @@ project(includes_scanner VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Boost 1.70.0 REQUIRED program_options regex)
+find_package(Boost 1.70.0 REQUIRED program_options regex filesystem thread wave)
 set(Boost_NO_WARN_NEW_VERSIONS 1)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
